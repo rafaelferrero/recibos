@@ -1,13 +1,12 @@
 import requests
-from requests.auth import HTTPBasicAuth
 
 
 def login(url, usuario, clave):
     with requests.Session() as s:
-        s.headers.update({'Content-Type': 'application/x-www-form-urlencoded'})
+        # s.headers.update({'Content-Type': 'application/x-www-form-urlencoded'})
         s.auth = (usuario, clave)
         r = s.post(url)
-    #import pdb; pdb.set_trace()
+        import pdb; pdb.set_trace()
 
 
 def main():
