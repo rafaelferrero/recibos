@@ -3,6 +3,7 @@ from getopt import getopt, GetoptError
 from sys import argv, exit
 import pyexcel as pe
 
+
 def getHelp():
     print(
         'python paycheck_upload.py' +
@@ -49,6 +50,8 @@ def main(argument):
             "Content-Type": "application/x-www-form-urlencoded"}
         )
 
+    # ToDo: Iterar desde acá hasta el final por cada archivo pdf que exista
+    #   en path_to_files
     f = open(path_to_files + '20-29087702-5_20210208_0_711521050.pdf', 'rb'),
 
     files = {
