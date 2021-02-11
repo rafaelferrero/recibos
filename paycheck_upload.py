@@ -6,13 +6,23 @@ import pyexcel as pe
 
 def getHelp():
     print(
-        'python paycheck_upload.py' +
-        ' -l <loginUrl> -d <documentsUrl> -u <username> -p <password> -f <filesDir>'
+        '\n \nFirst you need to install requirements: \n' +
+        '   pip install -r requirements.txt \n \n' +
+        'Command Example: \n' +
+        '   python paycheck_upload.py' +
+        ' -l <loginUrl> -d <documentsUrl> -u <username> -p <password> -f <filesDir>\n'
+        '   ================================================== \n' +
+        '   = Only filesDir is not required, the others does = \n' +
+        '   ================================================== \n \n'
         )
 
 
 def main(argument):
 
+    loginUrl = ""
+    documentsUrl = ""
+    username = ""
+    password = ""
     path_to_files = ""
 
     try:
@@ -40,6 +50,11 @@ def main(argument):
             password = arg
         elif opt in ("-f", "--filesDir"):
             path_to_files = arg
+
+        # All this fields are requiered
+        if loginUrl or documentsUrl or username or password == "":
+            getHelp()
+            exit(2)
 
     r = requests.post(
         loginUrl,
