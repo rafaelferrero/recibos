@@ -16,7 +16,7 @@ def getHelp():
         '   python paycheck_upload.py' +
         ' -a <apiUrl> -d <documentsUrl> -u <username> -p <password> -f <filesDir>\n'
         '   ================================================== \n' +
-        '   = Only filesDir is not required, the others does = \n' +
+        '   =          All Parameters are requiered          = \n' +
         '   ================================================== \n \n'
         )
 
@@ -42,6 +42,7 @@ def main(argument):
 
     if not opts:
         print("\n The Parameters are not optionals !!!")
+        print("\n ====================================")
         getHelp()
         exit(2)
 
@@ -61,11 +62,12 @@ def main(argument):
             path_to_files = arg
 
     # All this fields are requiered
-    if (apiUrl or documentsUrl or username or password) == "":
+    if (apiUrl or documentsUrl or username or password or filesDir) == "":
         print("apiUrl={}\n" +
             "documentsUrl={}\n"+
             "username={}\n"+
-            "password={}".format(
+            "password={}\n"+
+            "filesDir".format(
                 apiUrl, documentsUrl, username, password
             ))
         getHelp()
