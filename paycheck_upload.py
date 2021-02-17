@@ -2,15 +2,19 @@ import requests
 from getopt import getopt, GetoptError
 from sys import argv, exit
 import pyexcel as pe
+from os import listdir, path, makedirs
 
 
 def getHelp():
     print(
-        '\n \nFirst you need to install requirements: \n' +
+        'INSTRUCTIONS\n \n' +
+        '============\n \n' +
+        'First you need to install requirements: \n' +
         '   pip install -r requirements.txt \n \n' +
+        '   All the files in filesDir must be PDF.\n \n' +
         'Command Example: \n' +
         '   python paycheck_upload.py' +
-        ' -l <loginUrl> -d <documentsUrl> -u <username> -p <password> -f <filesDir>\n'
+        ' -a <apiUrl> -d <documentsUrl> -u <username> -p <password> -f <filesDir>\n'
         '   ================================================== \n' +
         '   = Only filesDir is not required, the others does = \n' +
         '   ================================================== \n \n'
@@ -19,15 +23,15 @@ def getHelp():
 
 def main(argument):
 
-    loginUrl = ""
+    apiUrl = ""
     documentsUrl = ""
     username = ""
     password = ""
     path_to_files = ""
 
     try:
-        opts, args = getopt(argument, "hl:d:u:p:f:", [
-            "loginUrl=",
+        opts, args = getopt(argument, "ha:d:u:p:f:", [
+            "apiUrl=",
             "documentsUrl=",
             "username=",
             "password=",
@@ -36,12 +40,17 @@ def main(argument):
         getHelp()
         exit(2)
 
+    if not opts:
+        print("\n The Parameters are not optionals !!!")
+        getHelp()
+        exit(2)
+
     for opt, arg in opts:
         if opt == '-h':
             getHelp()
             exit()
-        elif opt in ("-l", "--loginUrl"):
-            loginUrl = arg
+        elif opt in ("-a", "--apiUrl"):
+            apiUrl = arg
         elif opt in ("-d", "--documentsUrl"):
             documentsUrl = arg
         elif opt in ("-u", "--username"):
@@ -51,13 +60,32 @@ def main(argument):
         elif opt in ("-f", "--filesDir"):
             path_to_files = arg
 
-        # All this fields are requiered
-        if loginUrl or documentsUrl or username or password == "":
-            getHelp()
-            exit(2)
+    import pdb; pdb.set_trace()
+    # All this fields are requiered
+    if (apiUrl or documentsUrl or username or password) == "":
+        print("apiUrl={}\n" +
+            "documentsUrl={}\n"+
+            "username={}\n"+
+            "password={}".format(
+                apiUrl, documentsUrl, username, password
+            ))
+        getHelp()
+        exit(2)
+
+
+    # All the files must be pdf
+    flag = False
+    files = listdir(path_to_files)
+    for f in files:
+        if path.splitext(f)[1] != ".pdf":
+            flag = True
+            print(f + " is not a \'PDF\' file.")
+    if flag:
+        getHelp()
+        exit(2)
 
     r = requests.post(
-        loginUrl,
+        apiUrl + "/login",
         data={
             'email': username,
             'password': password},
@@ -65,36 +93,38 @@ def main(argument):
             "Content-Type": "application/x-www-form-urlencoded"}
         )
 
-    # ToDo: Iterar desde acá hasta el final por cada archivo pdf que exista
-    #   en path_to_files
-    f = open(path_to_files + '20-29087702-5_20210208_0_711521050.pdf', 'rb'),
+    for file in files:
+        # f = open(path_to_files + '20-29087702-5_20210208_0_711521050.pdf', 'rb'),
+        f = open(path_to_files + file, 'rb'),
 
-    files = {
-        'file': (
-            f[0].name,
-            f[0],
-            'file/pdf',
-        )}
+        files = {
+            'file': (
+                f[0].name,
+                f[0],
+                'file/pdf',
+            )}
 
-    headers = {
-        "Accept": "text/html, application/json",
-        "Cookie": r.headers["Set-Cookie"],
-        }
+        headers = {
+            "Accept": "text/html, application/json",
+            "Cookie": r.headers["Set-Cookie"],
+            }
 
-    # ToDo: Crear un listado excel con los cuil de los empleados y sus employeeId
-    #   buscar en la lista el employeeId en base al cuil del nombre del archivo
-    #   pdf y ponerlo en el diccionario "data"
-    data = {
-        "employeeId": "395",
-        "name": "Recibo",
-        "MAX_FILE_SIZE": "2000000",
-        }
+        # ToDo: This must be dinamic, based on cuil in file name
+        data = {
+            "employeeId": "395",
+            "name": "Recibo",  # fixed
+            "MAX_FILE_SIZE": "2000000",  # fixed
+            }
 
-    x = requests.post(
-        documentsUrl,
-        data=data,
-        headers=headers,
-        files=files,
+        u = requests.post(
+            documentsUrl,
+            data=data,
+            headers=headers,
+            files=files,
+            )
+
+    o = request.get(
+        apiUrl + "/logout"
         )
 
 
