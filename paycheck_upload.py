@@ -60,7 +60,6 @@ def main(argument):
         elif opt in ("-f", "--filesDir"):
             path_to_files = arg
 
-    import pdb; pdb.set_trace()
     # All this fields are requiered
     if (apiUrl or documentsUrl or username or password) == "":
         print("apiUrl={}\n" +
