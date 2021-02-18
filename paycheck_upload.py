@@ -2,16 +2,17 @@ import requests
 from getopt import getopt, GetoptError
 from sys import argv, exit
 import pyexcel as pe
-from os import listdir, path, makedirs
+from os import listdir, path
+import json
 
 
 def getHelp():
     print(
-        'INSTRUCTIONS\n \n' +
+        'INSTRUCTIONS\n' +
         '============\n \n' +
         'First you need to install requirements: \n' +
         '   pip install -r requirements.txt \n \n' +
-        '   All the files in filesDir must be PDF.\n \n' +
+        'All the files in filesDir must be PDF.\n \n' +
         'Command Example: \n' +
         '   python paycheck_upload.py' +
         ' -a <apiUrl> -d <documentsUrl> -u <username> -p <password> -f <filesDir>\n'
@@ -19,6 +20,45 @@ def getHelp():
         '   =          All Parameters are requiered          = \n' +
         '   ================================================== \n \n'
         )
+
+
+def getJson(rp,documentsUrl):
+    p = 1
+    x = requests.get(
+        documentsUrl + "/employees/?page=" + str(p),
+        headers = {
+            "Accept": "text/html, application/json",
+            "Cookie": rp.headers["Set-Cookie"],
+            }
+        )
+    jsondata = json.loads(x.text)
+
+    result = {}
+    while jsondata["init"]["data"]:
+        for i in range(len(jsondata["init"]["data"])):
+            result[jsondata["init"]["data"][i]["init"]["taxId"]] = jsondata["init"]["data"][i]["init"]["id"]
+
+        p += 1
+        x = requests.get(
+            documentsUrl + "/employees/?page=" + str(p),
+            headers = {
+                "Accept": "text/html, application/json",
+                "Cookie": rp.headers["Set-Cookie"],
+                }
+            )
+        jsondata = json.loads(x.text)
+
+    return result
+
+
+def get_employId(file, data):
+    cuil = file[0:13].replace("-","")
+    try:
+        eid=data[cuil]
+    except:
+        eid=None
+
+    return eid
 
 
 def main(argument):
@@ -41,8 +81,8 @@ def main(argument):
         exit(2)
 
     if not opts:
-        print("\n The Parameters are not optionals !!!")
-        print("\n ====================================")
+        print("The Parameters are not optionals !!!")
+        print("====================================")
         getHelp()
         exit(2)
 
@@ -94,6 +134,8 @@ def main(argument):
             "Content-Type": "application/x-www-form-urlencoded"}
         )
 
+    employees = getJson(r, documentsUrl)
+
     for file in files:
         # f = open(path_to_files + '20-29087702-5_20210208_0_711521050.pdf', 'rb'),
         f = open(path_to_files + file, 'rb'),
@@ -109,22 +151,24 @@ def main(argument):
             "Accept": "text/html, application/json",
             "Cookie": r.headers["Set-Cookie"],
             }
-
-        # ToDo: This must be dinamic, based on cuil in file name
+        eid = get_employId(file, employees)
+        #eid = str(395)
         data = {
-            "employeeId": "395",
+            "employeeId": eid,
             "name": "Recibo",  # fixed
             "MAX_FILE_SIZE": "2000000",  # fixed
             }
+        if eid:
+            u = requests.post(
+                documentsUrl + "/documents",
+                data=data,
+                headers=headers,
+                files=files,
+                )
+        else:
+            print("cuil no encontrado " + file)
 
-        u = requests.post(
-            documentsUrl,
-            data=data,
-            headers=headers,
-            files=files,
-            )
-
-    o = request.get(
+    o = requests.get(
         apiUrl + "/logout"
         )
 
