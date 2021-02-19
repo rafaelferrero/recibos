@@ -37,7 +37,6 @@ def getJson(rp,documentsUrl):
     while jsondata["init"]["data"]:
         for i in range(len(jsondata["init"]["data"])):
             result[jsondata["init"]["data"][i]["init"]["taxId"]] = jsondata["init"]["data"][i]["init"]["id"]
-
         p += 1
         x = requests.get(
             documentsUrl + "/employees/?page=" + str(p),
@@ -135,11 +134,12 @@ def main(argument):
         )
 
     employees = getJson(r, documentsUrl)
-
+    print("Empleados a procesar {}\n \n".format(employees))
+    print("Inicio proceso de upload de archivos")
     for file in files:
         # f = open(path_to_files + '20-29087702-5_20210208_0_711521050.pdf', 'rb'),
         f = open(path_to_files + file, 'rb'),
-
+        print("    Uploading archivo {}".format(f[0].name))
         files = {
             'file': (
                 f[0].name,
@@ -151,8 +151,8 @@ def main(argument):
             "Accept": "text/html, application/json",
             "Cookie": r.headers["Set-Cookie"],
             }
+
         eid = get_employId(file, employees)
-        #eid = str(395)
         data = {
             "employeeId": eid,
             "name": "Recibo",  # fixed
@@ -165,12 +165,14 @@ def main(argument):
                 headers=headers,
                 files=files,
                 )
+            print("        fin upload archivo {}".format(f[0].name))
         else:
-            print("cuil no encontrado " + file)
+            print("        cuil no encontrado " + file)
 
     o = requests.get(
         apiUrl + "/logout"
         )
+    print("Fin del proceso")
 
 
 if __name__ == "__main__":
