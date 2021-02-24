@@ -2,3 +2,5 @@ venv/
 .git/
 *.pdf
 *.http
+*.txt
+uploadrecibos.bat

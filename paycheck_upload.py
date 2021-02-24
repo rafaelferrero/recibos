@@ -134,7 +134,9 @@ def main(argument):
         )
 
     employees = getJson(r, documentsUrl)
-    print("Empleados a procesar {}\n \n".format(employees))
+    print("Empleados a procesar {}\n \n".format(
+        json.dumps(employees, indent=4)))
+    
     print("Inicio proceso de upload de archivos")
     for file in files:
         # f = open(path_to_files + '20-29087702-5_20210208_0_711521050.pdf', 'rb'),
@@ -165,7 +167,12 @@ def main(argument):
                 headers=headers,
                 files=files,
                 )
-            print("        fin upload archivo {}".format(f[0].name))
+            if u.status_code==201:
+                print("        upload correcto archivo {}".format(f[0].name))
+            else:
+                print("        error upload archivo {} mensaje: {}".format(
+                    f[0].name,
+                    u.text))
         else:
             print("        cuil no encontrado " + file)
 
