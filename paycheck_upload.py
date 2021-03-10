@@ -3,7 +3,20 @@ from getopt import getopt, GetoptError
 from sys import argv, exit
 import pyexcel as pe
 from os import listdir, path
+from datetime import datetime as dt
 import json
+
+
+LOG_ERROR_PATH = "C:\\Users\\rostagnof\\Downloads\\UploadRecibos\\"
+
+
+def get_str_timestamp():
+    return str(dt.now())
+
+
+def logerror(mensaje):
+    with open(LOG_ERROR_PATH + "error_exportacion.txt", "a") as f:
+        f.write("<<<" + get_str_timestamp() + ">>>   "+ mensaje + "\n")
 
 
 def getHelp():
@@ -80,8 +93,7 @@ def main(argument):
         exit(2)
 
     if not opts:
-        print("The Parameters are not optionals !!!")
-        print("====================================")
+        logerror("<<<No execution !!! The Parameters are not optionals !!!>>>")
         getHelp()
         exit(2)
 
@@ -119,8 +131,9 @@ def main(argument):
     for f in files:
         if path.splitext(f)[1] != ".pdf":
             flag = True
-            print(f + " is not a \'PDF\' file.")
+            logerror(f + " is not a 'PDF' file.")
     if flag:
+        logerror("<<<No execution !!! all files must be 'PDF'>>>")
         getHelp()
         exit(2)
 
@@ -134,10 +147,10 @@ def main(argument):
         )
 
     employees = getJson(r, documentsUrl)
-    print("Empleados a procesar {}\n \n".format(
+    logerror("Empleados a procesar {}\n \n".format(
         json.dumps(employees, indent=4)))
-    
-    print("Inicio proceso de upload de archivos")
+
+    logerror("Inicio proceso de upload de archivos")
     for file in files:
         # f = open(path_to_files + '20-29087702-5_20210208_0_711521050.pdf', 'rb'),
         f = open(path_to_files + file, 'rb'),
@@ -168,18 +181,18 @@ def main(argument):
                 files=files,
                 )
             if u.status_code==201:
-                print("        upload correcto archivo {}".format(f[0].name))
+                logerror("        upload correcto archivo {}".format(f[0].name))
             else:
-                print("        error upload archivo {} mensaje: {}".format(
+                logerror("        error upload archivo {} mensaje: {}".format(
                     f[0].name,
                     u.text))
         else:
-            print("        cuil no encontrado " + file)
+            logerror("        cuil no encontrado " + file)
 
     o = requests.get(
         apiUrl + "/logout"
         )
-    print("Fin del proceso")
+    logerror("Fin del proceso")
 
 
 if __name__ == "__main__":
