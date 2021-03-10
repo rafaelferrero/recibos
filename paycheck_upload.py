@@ -3,7 +3,21 @@ from getopt import getopt, GetoptError
 from sys import argv, exit
 import pyexcel as pe
 from os import listdir, path
+from datetime import datetime as dt
+import shutil
 import json
+
+
+LOG_ERROR_PATH = "C:\\Users\\rostagnof\\Downloads\\UploadRecibos\\"
+
+
+def get_str_timestamp():
+    return str(dt.now())
+
+
+def logerror(mensaje):
+    with open(LOG_ERROR_PATH + "error_exportacion.txt", "a") as f:
+        f.write("<<<" + get_str_timestamp() + ">>>   "+ mensaje + "\n")
 
 
 def getHelp():
@@ -32,20 +46,24 @@ def getJson(rp,documentsUrl):
             }
         )
     jsondata = json.loads(x.text)
-
-    result = {}
-    while jsondata["init"]["data"]:
-        for i in range(len(jsondata["init"]["data"])):
-            result[jsondata["init"]["data"][i]["init"]["taxId"]] = jsondata["init"]["data"][i]["init"]["id"]
-        p += 1
-        x = requests.get(
-            documentsUrl + "/employees/?page=" + str(p),
-            headers = {
-                "Accept": "text/html, application/json",
-                "Cookie": rp.headers["Set-Cookie"],
-                }
-            )
-        jsondata = json.loads(x.text)
+    try:
+        result = {}
+        while jsondata["init"]["data"]:
+            for i in range(len(jsondata["init"]["data"])):
+                result[jsondata["init"]["data"][i]["init"]["taxId"]] = jsondata["init"]["data"][i]["init"]["id"]
+            p += 1
+            x = requests.get(
+                documentsUrl + "/employees/?page=" + str(p),
+                headers = {
+                    "Accept": "text/html, application/json",
+                    "Cookie": rp.headers["Set-Cookie"],
+                    }
+                )
+            jsondata = json.loads(x.text)
+    except:
+        logerror(jsondata)
+        logerror("Programa terminado con Error")
+        exit(2)
 
     return result
 
@@ -80,8 +98,7 @@ def main(argument):
         exit(2)
 
     if not opts:
-        print("The Parameters are not optionals !!!")
-        print("====================================")
+        logerror("<<<No execution !!! The Parameters are not optionals !!!>>>")
         getHelp()
         exit(2)
 
@@ -111,7 +128,10 @@ def main(argument):
             ))
         getHelp()
         exit(2)
-
+    
+    logerror("=============================================")
+    logerror("INICIAMOS EL PROCESO DE UPLOADS A ROCKUAPP!!!")
+    logerror("=============================================")
 
     # All the files must be pdf
     flag = False
@@ -119,9 +139,9 @@ def main(argument):
     for f in files:
         if path.splitext(f)[1] != ".pdf":
             flag = True
-            print(f + " is not a \'PDF\' file.")
+            logerror(f + " is not a 'PDF' file.")
     if flag:
-        getHelp()
+        logerror("<<<No execution !!! all files must be 'PDF'>>>")
         exit(2)
 
     r = requests.post(
@@ -132,54 +152,61 @@ def main(argument):
         headers={
             "Content-Type": "application/x-www-form-urlencoded"}
         )
-
-    employees = getJson(r, documentsUrl)
-    print("Empleados a procesar {}\n \n".format(
-        json.dumps(employees, indent=4)))
     
-    print("Inicio proceso de upload de archivos")
-    for file in files:
-        # f = open(path_to_files + '20-29087702-5_20210208_0_711521050.pdf', 'rb'),
-        f = open(path_to_files + file, 'rb'),
-        print("    Uploading archivo {}".format(f[0].name))
-        files = {
-            'file': (
-                f[0].name,
-                f[0],
-                'file/pdf',
-            )}
-
-        headers = {
-            "Accept": "text/html, application/json",
-            "Cookie": r.headers["Set-Cookie"],
-            }
-
-        eid = get_employId(file, employees)
-        data = {
-            "employeeId": eid,
-            "name": "Recibo",  # fixed
-            "MAX_FILE_SIZE": "2000000",  # fixed
-            }
-        if eid:
-            u = requests.post(
-                documentsUrl + "/documents",
-                data=data,
-                headers=headers,
-                files=files,
-                )
-            if u.status_code==201:
-                print("        upload correcto archivo {}".format(f[0].name))
-            else:
-                print("        error upload archivo {} mensaje: {}".format(
+    try:
+        employees = getJson(r, documentsUrl)
+        logerror("Empleados a procesar {}\n \n".format(
+            json.dumps(employees, indent=4)))
+    except:
+        logerror("sin empleados para procesar")
+	
+    if files:
+        logerror("Inicio proceso de upload de archivos")
+        for file in files:
+            # f = open(path_to_files + '20-29087702-5_20210208_0_711521050.pdf', 'rb'),
+            f = open(path_to_files + file, 'rb'),
+            logerror("    Uploading archivo {}".format(f[0].name))
+            files = {
+                'file': (
                     f[0].name,
-                    u.text))
-        else:
-            print("        cuil no encontrado " + file)
+                    f[0],
+                    'file/pdf',
+                )}
+            
+            headers = {
+                "Accept": "text/html, application/json",
+                "Cookie": r.headers["Set-Cookie"],
+                }
+            
+            eid = get_employId(file, employees)
+            data = {
+                "employeeId": eid,
+                "name": "Recibo",  # fixed
+                "MAX_FILE_SIZE": "2000000",  # fixed
+                }
+            if eid:
+                u = requests.post(
+                    documentsUrl + "/documents",
+                    data=data,
+                    headers=headers,
+                    files=files,
+                    )
+                if u.status_code==201:
+                    logerror("        upload correcto archivo {}".format(f[0].name))
+                    shutil.move(path_to_files + file, path_to_files + "..\recibos_procesados\\" + file)
+                else:
+                    logerror("        error upload archivo {} mensaje: {}".format(
+                        f[0].name,
+                        u.text))
+            else:
+                logerror("        cuil no encontrado " + file)
+    else:
+        logerror("sin archivos para procesar")
 
     o = requests.get(
         apiUrl + "/logout"
         )
-    print("Fin del proceso")
+    logerror("FINALIZAMOS EL PROCESO DE UPLOADS A ROCKUAPP!!!")
 
 
 if __name__ == "__main__":
